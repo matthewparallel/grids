@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue + Tabulator Example</title>
+    <!-- Vue CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Tabulator CDN -->
+    <link
+      href="https://unpkg.com/tabulator-tables/dist/css/tabulator.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="text/javascript"
+      src="https://unpkg.com/tabulator-tables/dist/js/tabulator.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://oss.sheetjs.com/sheetjs/xlsx.full.min.js"
+    ></script>
+  </head>
+  <body>
+    <div id="app">
+      <div>{{ message }}</div>
+      <button id="download-xlsx">Download Excel Sheet</button>
+      <div v-if="showTable" ref="table" id="table"></div>
+      <button @click="getData" v-if="showButton">Fake Fetch Data</button>
+      <ul>
+        <li>
+          Using the autocolumn feature, good for simple static strings and nums
+          data
+        </li>
+        <li>
+          For tables with large numbers of columns you can use the
+          'virtualDomHoz' option to enable the horizontal Virtual DOM which will
+          improve table rendering performance in tables with a large number of
+          columns (this might be useful for big datasets we might bring in)
+        </li>
+        <li>
+          Using local pagination, where Tabulator will parse in all available
+          data and then paginate this data set. Or remote pagination, where
+          Tabulator will load individual pages of data via Ajax from the server.
+        </li>
+        <li>
+          Renders using a Virtual DOM, this means that it only renders the rows
+          you seen in the table and creates and destroys the rows as you scroll
+          through the table/change page.
+        </li>
+        <li>I had a look at JSpreadsheet however for the vue version you need to pay, very pricy</li>
+      </ul>
+    </div>
+
+    <script>
+      const { createApp, ref, reactive, onMounted } = Vue;
+
+      createApp({
+        setup() {
+          const message = ref("Tabulator Grid Test");
+          const table = ref(null); // reference to your table element
+          const tabulator = ref(null); // variable to hold your table
+          const tableData = reactive([]); // data for table to display
+          const showTable = ref(false); // control when to show the table
+          const showButton = ref(true);
+          const fauxFetchedData = [
+            {
+              "ODS Code": "A001",
+              "Site Name": "Central Hospital",
+              Patients: 120000,
+              Doctors: 150,
+              Nurses: 300,
+              Beds: 500,
+              Revenue: 20000000,
+              Surgeries: 1200,
+              "Emergency Visits": 15000,
+              "Outpatient Visits": 100000,
+              "Inpatient Admissions": 25000,
+              "Medical Equipment": 1200,
+              Ambulances: 10,
+              "Operating Rooms": 10,
+            },
+            {
+              "ODS Code": "B002",
+              "Site Name": "West Clinic",
+              Patients: 750000,
+              Doctors: 400,
+              Nurses: 800,
+              Beds: 1200,
+              Revenue: 75000000,
+              Surgeries: 5000,
+              "Emergency Visits": 50000,
+              "Outpatient Visits": 600000,
+              "Inpatient Admissions": 120000,
+              "Medical Equipment": 4000,
+              Ambulances: 30,
+              "Operating Rooms": 25,
+            },
+            {
+              "ODS Code": "C003",
+              "Site Name": "East Medical Center",
+              Patients: 150000,
+              Doctors: 200,
+              Nurses: 400,
+              Beds: 600,
+              Revenue: 30000000,
+              Surgeries: 1500,
+              "Emergency Visits": 20000,
+              "Outpatient Visits": 130000,
+              "Inpatient Admissions": 30000,
+              "Medical Equipment": 1500,
+              Ambulances: 15,
+              "Operating Rooms": 15,
+            },
+            {
+              "ODS Code": "D004",
+              "Site Name": "North Health Center",
+              Patients: 90000,
+              Doctors: 100,
+              Nurses: 200,
+              Beds: 300,
+              Revenue: 15000000,
+              Surgeries: 900,
+              "Emergency Visits": 12000,
+              "Outpatient Visits": 75000,
+              "Inpatient Admissions": 18000,
+              "Medical Equipment": 900,
+              Ambulances: 8,
+              "Operating Rooms": 8,
+            },
+            {
+              "ODS Code": "E005",
+              "Site Name": "South Hospital",
+              Patients: 110000,
+              Doctors: 130,
+              Nurses: 270,
+              Beds: 450,
+              Revenue: 18000000,
+              Surgeries: 1100,
+              "Emergency Visits": 14000,
+              "Outpatient Visits": 95000,
+              "Inpatient Admissions": 22000,
+              "Medical Equipment": 1100,
+              Ambulances: 9,
+              "Operating Rooms": 9,
+            },
+            {
+              "ODS Code": "F006",
+              "Site Name": "City Clinic",
+              Patients: 50000,
+              Doctors: 70,
+              Nurses: 140,
+              Beds: 200,
+              Revenue: 10000000,
+              Surgeries: 500,
+              "Emergency Visits": 7000,
+              "Outpatient Visits": 40000,
+              "Inpatient Admissions": 10000,
+              "Medical Equipment": 500,
+              Ambulances: 5,
+              "Operating Rooms": 5,
+            },
+            {
+              "ODS Code": "G007",
+              "Site Name": "Regional Medical Center",
+              Patients: 250000,
+              Doctors: 250,
+              Nurses: 500,
+              Beds: 800,
+              Revenue: 50000000,
+              Surgeries: 2500,
+              "Emergency Visits": 30000,
+              "Outpatient Visits": 200000,
+              "Inpatient Admissions": 50000,
+              "Medical Equipment": 2500,
+              Ambulances: 20,
+              "Operating Rooms": 20,
+            },
+            {
+              "ODS Code": "H008",
+              "Site Name": "Lakeside Health",
+              Patients: 130000,
+              Doctors: 160,
+              Nurses: 320,
+              Beds: 520,
+              Revenue: 22000000,
+              Surgeries: 1300,
+              "Emergency Visits": 16000,
+              "Outpatient Visits": 110000,
+              "Inpatient Admissions": 26000,
+              "Medical Equipment": 1300,
+              Ambulances: 11,
+              "Operating Rooms": 11,
+            },
+            {
+              "ODS Code": "I009",
+              "Site Name": "Mountain Clinic",
+              Patients: 70000,
+              Doctors: 90,
+              Nurses: 180,
+              Beds: 300,
+              Revenue: 14000000,
+              Surgeries: 700,
+              "Emergency Visits": 9000,
+              "Outpatient Visits": 60000,
+              "Inpatient Admissions": 14000,
+              "Medical Equipment": 700,
+              Ambulances: 6,
+              "Operating Rooms": 6,
+            },
+            {
+              "ODS Code": "J010",
+              "Site Name": "Downtown Health Center",
+              Patients: 160000,
+              Doctors: 210,
+              Nurses: 420,
+              Beds: 650,
+              Revenue: 26000000,
+              Surgeries: 1600,
+              "Emergency Visits": 19000,
+              "Outpatient Visits": 140000,
+              "Inpatient Admissions": 32000,
+              "Medical Equipment": 1600,
+              Ambulances: 13,
+              "Operating Rooms": 13,
+            },
+            {
+              "ODS Code": "K011",
+              "Site Name": "Suburban Hospital",
+              Patients: 90000,
+              Doctors: 110,
+              Nurses: 220,
+              Beds: 360,
+              Revenue: 17000000,
+              Surgeries: 900,
+              "Emergency Visits": 11000,
+              "Outpatient Visits": 70000,
+              "Inpatient Admissions": 18000,
+              "Medical Equipment": 900,
+              Ambulances: 7,
+              "Operating Rooms": 7,
+            },
+            {
+              "ODS Code": "L012",
+              "Site Name": "Valley Medical Center",
+              Patients: 115000,
+              Doctors: 140,
+              Nurses: 280,
+              Beds: 440,
+              Revenue: 21000000,
+              Surgeries: 1150,
+              "Emergency Visits": 14000,
+              "Outpatient Visits": 85000,
+              "Inpatient Admissions": 23000,
+              "Medical Equipment": 1150,
+              Ambulances: 9,
+              "Operating Rooms": 9,
+            },
+            {
+              "ODS Code": "M013",
+              "Site Name": "Metro Clinic",
+              Patients: 45000,
+              Doctors: 60,
+              Nurses: 120,
+              Beds: 180,
+              Revenue: 9000000,
+              Surgeries: 450,
+              "Emergency Visits": 6000,
+              "Outpatient Visits": 35000,
+              "Inpatient Admissions": 9000,
+              "Medical Equipment": 450,
+              Ambulances: 4,
+              "Operating Rooms": 4,
+            },
+            {
+              "ODS Code": "N014",
+              "Site Name": "Coastal Health Center",
+              Patients: 80000,
+              Doctors: 100,
+              Nurses: 200,
+              Beds: 320,
+              Revenue: 15000000,
+              Surgeries: 800,
+              "Emergency Visits": 10000,
+              "Outpatient Visits": 65000,
+              "Inpatient Admissions": 16000,
+              "Medical Equipment": 800,
+              Ambulances: 7,
+              "Operating Rooms": 7,
+            },
+            {
+              "ODS Code": "O015",
+              "Site Name": "Greenwood Hospital",
+              Patients: 95000,
+              Doctors: 120,
+              Nurses: 240,
+              Beds: 380,
+              Revenue: 18000000,
+              Surgeries: 950,
+              "Emergency Visits": 12000,
+              "Outpatient Visits": 75000,
+              "Inpatient Admissions": 19000,
+              "Medical Equipment": 950,
+              Ambulances: 8,
+              "Operating Rooms": 8,
+            },
+            {
+              "ODS Code": "P016",
+              "Site Name": "Pine Clinic",
+              Patients: 40000,
+              Doctors: 50,
+              Nurses: 100,
+              Beds: 160,
+              Revenue: 8000000,
+              Surgeries: 400,
+              "Emergency Visits": 5000,
+              "Outpatient Visits": 30000,
+              "Inpatient Admissions": 8000,
+              "Medical Equipment": 400,
+              Ambulances: 3,
+              "Operating Rooms": 3,
+            },
+            {
+              "ODS Code": "Q017",
+              "Site Name": "Hilltop Medical Center",
+              Patients: 200000,
+              Doctors: 250,
+              Nurses: 500,
+              Beds: 800,
+              Revenue: 45000000,
+              Surgeries: 2000,
+              "Emergency Visits": 24000,
+              "Outpatient Visits": 160000,
+              "Inpatient Admissions": 40000,
+              "Medical Equipment": 2000,
+              Ambulances: 15,
+              "Operating Rooms": 15,
+            },
+            {
+              "ODS Code": "R018",
+              "Site Name": "Riverside Health",
+              Patients: 100000,
+              Doctors: 130,
+              Nurses: 260,
+              Beds: 420,
+              Revenue: 20000000,
+              Surgeries: 1000,
+              "Emergency Visits": 13000,
+              "Outpatient Visits": 80000,
+              "Inpatient Admissions": 20000,
+              "Medical Equipment": 1000,
+              Ambulances: 9,
+              "Operating Rooms": 9,
+            },
+            {
+              "ODS Code": "S019",
+              "Site Name": "Forest Clinic",
+              Patients: 55000,
+              Doctors: 70,
+              Nurses: 140,
+              Beds: 220,
+              Revenue: 11000000,
+              Surgeries: 550,
+              "Emergency Visits": 7000,
+              "Outpatient Visits": 45000,
+              "Inpatient Admissions": 11000,
+              "Medical Equipment": 550,
+              Ambulances: 5,
+              "Operating Rooms": 5,
+            },
+            {
+              "ODS Code": "T020",
+              "Site Name": "Harbor Hospital",
+              Patients: 105000,
+              Doctors: 140,
+              Nurses: 280,
+              Beds: 440,
+              Revenue: 21000000,
+              Surgeries: 1050,
+              "Emergency Visits": 14000,
+              "Outpatient Visits": 85000,
+              "Inpatient Admissions": 21000,
+              "Medical Equipment": 1050,
+              Ambulances: 9,
+              "Operating Rooms": 9,
+            },
+            {
+              "ODS Code": "U021",
+              "Site Name": "Sunrise Health Center",
+              Patients: 98000,
+              Doctors: 125,
+              Nurses: 250,
+              Beds: 400,
+              Revenue: 19000000,
+              Surgeries: 980,
+              "Emergency Visits": 12500,
+              "Outpatient Visits": 78000,
+              "Inpatient Admissions": 19500,
+              "Medical Equipment": 980,
+              Ambulances: 8,
+              "Operating Rooms": 8,
+            },
+          ];
+
+          function initializeTabulator() {
+            if (table.value && !tabulator.value) {
+              tableData.value = fauxFetchedData;
+              tabulator.value = new Tabulator(table.value, {
+                data: tableData.value, // link data to table
+                reactiveData: true, // enable data reactivity
+                // columns: [
+                //   { title: "ODS Code", field: "ODS Code" },
+                //   {
+                //     title: "Site Name",
+                //     field: "Site Name",
+                //     hozAlign: "right",
+                //     sorter: "number",
+                //   },
+                //   { title: "Patients", field: "Patients" },
+                // ],
+                autoColumns: true,
+                height: "311px",
+                layout: "fitDataTable",
+                placeholder: "No Data Available",
+                pagination: true,
+                renderHorizontal: "virtual",
+              });
+              document
+                .getElementById("download-xlsx")
+                .addEventListener("click", function () {
+                  tabulator.value.download("xlsx", "data.xlsx", { sheetName: "My Data" });
+                });
+            }
+          }
+
+          function getData() {
+            showTable.value = true;
+            showButton.value = false;
+            const interval = setInterval(() => {
+              if (table.value) {
+                initializeTabulator();
+                clearInterval(interval);
+              }
+            }, 10);
+          }
+
+          onMounted(() => {
+            console.log("Component mounted");
+          });
+
+          return {
+            message,
+            tabulator,
+            table,
+            getData,
+            showTable,
+            showButton,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
